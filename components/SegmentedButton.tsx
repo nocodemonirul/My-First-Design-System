@@ -1,0 +1,1 @@
+// This component has been deprecated. Use custom implementations for segmented controls if needed, or adapt Button.tsx.

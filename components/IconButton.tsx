@@ -1,0 +1,1 @@
+// This component has been deprecated and replaced by components/Button.tsx

@@ -1,0 +1,5 @@
+{
+  "name": "SUS Design System",
+  "description": "A production-grade, token-based Button Design System featuring Buttons, IconButtons, FABs, and Segmented Controls built with React, Tailwind, and Framer Motion.",
+  "requestFramePermissions": []
+}
