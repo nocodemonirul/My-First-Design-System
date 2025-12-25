@@ -1,4 +1,4 @@
-import React from "react"
+export const ButtonReactCode = `import React from "react"
 
 /**
  * 1. CONFIGURATION & TOKENS
@@ -83,10 +83,10 @@ export function Button(props: ButtonProps) {
         fontWeight: 500,
         borderRadius: "8px",
         outline: "none",
-        border: `1px solid ${variantStyle.border}`,
+        border: \`1px solid \${variantStyle.border}\`,
         backgroundColor: isHovered ? variantStyle.hover : variantStyle.bg,
         color: variantStyle.text,
-        boxShadow: isFocused ? `0 0 0 3px ${currentTheme.focusRing}44` : "none",
+        boxShadow: isFocused ? \`0 0 0 3px \${currentTheme.focusRing}44\` : "none",
         padding: sizeStyle.padding,
         height: sizeStyle.height,
         gap: sizeStyle.gap,
@@ -123,3 +123,4 @@ export function Button(props: ButtonProps) {
         </button>
     )
 }
+`

@@ -1,15 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Check, Copy, Eye, Code2, Moon, Sun, Framer } from 'lucide-react';
+import { Check, Copy, Eye, Code2, Framer, Atom, Moon, Sun } from 'lucide-react';
 import { cn } from '../utils';
+
+export interface PreviewVariant {
+  name: string;
+  component: React.ReactNode;
+  code?: string;
+}
 
 interface ComponentPreviewProps {
   title: string;
   description?: string;
   code: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
   framerUrl?: string;
   framerCode?: string;
+  reactComponentCode?: string;
+  themeMode?: 'light' | 'dark';
+  variants?: PreviewVariant[];
 }
 
 export const ComponentPreview: React.FC<ComponentPreviewProps> = ({
@@ -19,26 +28,42 @@ export const ComponentPreview: React.FC<ComponentPreviewProps> = ({
   children,
   className,
   framerUrl,
-  framerCode
+  framerCode,
+  reactComponentCode,
+  themeMode,
+  variants
 }) => {
   const [view, setView] = useState<'preview' | 'code'>('preview');
   const [copied, setCopied] = useState(false);
-  const [copyFeedback, setCopyFeedback] = useState(""); // Stores "Framer", "React"
-  const [isDark, setIsDark] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState("");
+  const [isDark, setIsDark] = useState(themeMode === 'dark');
   const [showMenu, setShowMenu] = useState(false);
+  const [activeVariantIndex, setActiveVariantIndex] = useState(0);
+  
   const menuRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    setIsDark(themeMode === 'dark');
+  }, [themeMode]);
+
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(code.trim());
+    // Priority: React Source Code > Variant Code > Usage Code
+    let textToCopy = reactComponentCode ? reactComponentCode.trim() : code.trim();
+    
+    // If using variants and NO react source code is provided, try to use the variant's specific code
+    if (!reactComponentCode && variants && variants[activeVariantIndex]?.code) {
+        textToCopy = variants[activeVariantIndex].code!.trim();
+    }
+    
+    navigator.clipboard.writeText(textToCopy);
     setCopied(true);
-    setCopyFeedback("Code");
+    setCopyFeedback("React");
     setTimeout(() => setCopied(false), 2000);
     setShowMenu(false);
   };
 
   const handleVisualCopy = async (platform: 'framer' | 'generic') => {
-    // 1. If we have raw Framer code (Code Component), copy that first.
     if (platform === 'framer' && framerCode) {
         navigator.clipboard.writeText(framerCode);
         setCopied(true);
@@ -48,7 +73,6 @@ export const ComponentPreview: React.FC<ComponentPreviewProps> = ({
         return;
     }
 
-    // 2. If we have a URL (Smart Component), copy that.
     if (platform === 'framer' && framerUrl) {
       navigator.clipboard.writeText(framerUrl);
       setCopied(true);
@@ -58,44 +82,29 @@ export const ComponentPreview: React.FC<ComponentPreviewProps> = ({
       return;
     }
 
-    // 3. Fallback: Visual HTML copy
     if (!previewRef.current || !previewRef.current.firstElementChild) return;
 
     try {
       const original = previewRef.current.firstElementChild as HTMLElement;
-      // Deep clone to modify without affecting UI
       const clone = original.cloneNode(true) as HTMLElement;
 
-      // Recursive function to capture and inline computed styles
       const inlineStyles = (source: Element, target: HTMLElement) => {
         if (source.nodeType !== Node.ELEMENT_NODE) return;
         
         const computed = window.getComputedStyle(source);
-        
         const properties = [
-            // Layout
             'display', 'position', 'flexDirection', 'justifyContent', 'alignItems', 'flexWrap', 'gap',
             'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
             'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
             'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
-            'boxSizing', 'transform',
-            
-            // Visuals
-            'backgroundColor', 'backgroundImage',
-            'color', 'opacity',
-            'boxShadow', 'filter', 'backdropFilter',
-            
-            // Borders
+            'boxSizing', 'transform', 'backgroundColor', 'backgroundImage',
+            'color', 'opacity', 'boxShadow', 'filter', 'backdropFilter',
             'borderWidth', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
             'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor',
             'borderStyle', 'borderTopStyle', 'borderRightStyle', 'borderBottomStyle', 'borderLeftStyle',
             'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomRightRadius', 'borderBottomLeftRadius',
-            
-            // Typography
             'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 
             'textAlign', 'textTransform', 'textDecoration', 'whiteSpace',
-            
-            // SVG specific
             'fill', 'stroke', 'strokeWidth', 'strokeLinecap', 'strokeLinejoin'
         ];
 
@@ -103,11 +112,7 @@ export const ComponentPreview: React.FC<ComponentPreviewProps> = ({
         properties.forEach(prop => {
             // @ts-ignore
             let value = computed[prop];
-            
-            if (prop === 'display' && value === 'inline-flex') {
-                value = 'flex';
-            }
-
+            if (prop === 'display' && value === 'inline-flex') value = 'flex';
             if (value && value !== 'normal' && value !== 'auto' && value !== 'rgba(0, 0, 0, 0)' && value !== '0px') {
                 const key = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
                 styleString += `${key}:${value};`;
@@ -124,7 +129,6 @@ export const ComponentPreview: React.FC<ComponentPreviewProps> = ({
 
         const sourceChildren = Array.from(source.children);
         const targetChildren = Array.from(target.children);
-        
         sourceChildren.forEach((child, index) => {
             if (targetChildren[index]) {
                 inlineStyles(child, targetChildren[index] as HTMLElement);
@@ -162,126 +166,166 @@ export const ComponentPreview: React.FC<ComponentPreviewProps> = ({
         setShowMenu(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const renderWithTheme = (node: React.ReactNode) => {
+    if (React.isValidElement(node)) {
+        return React.cloneElement(node as React.ReactElement<any>, { theme: isDark ? 'dark' : 'light' });
+    }
+    return node;
+  };
+
   return (
-    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 mb-10 shadow-sm scroll-mt-24 transition-colors" id={title.toLowerCase().replace(/\s+/g, '-')}>
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h3>
-          {description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>}
-        </div>
+    <div className="group border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-950 mb-12 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 overflow-hidden" id={title.toLowerCase().replace(/\s+/g, '-')}>
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between px-5 py-4 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 gap-4 md:gap-0">
         
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-            <button
-              onClick={() => setView('preview')}
-              className={cn(
-                "p-1.5 rounded-md text-slate-500 dark:text-slate-400 transition-all text-xs font-medium flex items-center gap-1.5",
-                view === 'preview' ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "hover:text-slate-900 dark:hover:text-white"
-              )}
-            >
-              <Eye size={14} />
-              <span className="hidden sm:inline">Preview</span>
-            </button>
-            <button
-              onClick={() => setView('code')}
-              className={cn(
-                "p-1.5 rounded-md text-slate-500 dark:text-slate-400 transition-all text-xs font-medium flex items-center gap-1.5",
-                view === 'code' ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "hover:text-slate-900 dark:hover:text-white"
-              )}
-            >
-              <Code2 size={14} />
-              <span className="hidden sm:inline">Code</span>
-            </button>
-          </div>
+        {/* Title & Description */}
+        <div>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">{title}</h3>
+          {description && <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{description}</p>}
+        </div>
 
-          <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+        {/* Controls */}
+        <div className="flex items-center gap-3 self-start md:self-auto">
+            {/* View Toggle */}
+            <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800">
+                <button
+                    onClick={() => setView('preview')}
+                    className={cn(
+                        "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-2 transition-all duration-200",
+                        view === 'preview' 
+                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/5" 
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    )}
+                >
+                    <Eye size={14} className={view === 'preview' ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"} />
+                    Preview
+                </button>
+                <button
+                    onClick={() => setView('code')}
+                    className={cn(
+                        "px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-2 transition-all duration-200",
+                        view === 'code' 
+                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/5" 
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    )}
+                >
+                    <Code2 size={14} className={view === 'code' ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"} />
+                    Code
+                </button>
+            </div>
 
-          <div className="flex items-center gap-1 relative" ref={menuRef}>
-             <button
+            <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1"></div>
+
+            {/* Theme Toggle */}
+            <button
               onClick={() => setIsDark(!isDark)}
               className={cn(
-                "p-2 rounded-md transition-colors",
-                isDark 
-                  ? "text-brand-600 bg-brand-50 dark:bg-slate-800 dark:text-white" 
-                  : "text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200"
+                "p-2 rounded-lg transition-all duration-200 border border-transparent",
+                 "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-200 dark:hover:border-slate-800"
               )}
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
-              {isDark ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-            
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className={cn(
-                "p-2 rounded-md transition-colors flex items-center gap-2",
-                showMenu 
-                    ? "text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800" 
-                    : "text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200"
-              )}
-              title="Copy Component"
-            >
-              {copied ? (
-                 <span className="flex items-center text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    <Check size={16} className="mr-1" /> {copyFeedback}
-                 </span>
-              ) : (
-                 <Copy size={16} />
-              )}
+               {isDark ? <Sun size={18} /> : <Moon size={18} />} 
             </button>
 
-            {/* Dropdown Menu */}
-            {showMenu && (
-              <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 p-1">
-                 <div className="text-[10px] font-semibold text-slate-400 px-3 py-1.5 uppercase tracking-wider">Copy for</div>
-                 
-                 <button onClick={() => handleVisualCopy('framer')} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors text-left group">
-                    <Framer size={14} className="text-slate-400 group-hover:text-black dark:group-hover:text-white" /> <span>Framer</span>
-                 </button>
-                 
-                 <div className="h-px bg-slate-100 dark:bg-slate-700 my-1 mx-2"></div>
-                 
-                 <button onClick={handleCopyCode} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors text-left group">
-                    <Code2 size={14} className="text-slate-400 group-hover:text-[#61DAFB]" /> <span>React</span>
-                 </button>
-              </div>
-            )}
-          </div>
+            {/* Copy / Menu */}
+            <div className="relative" ref={menuRef}>
+                <button
+                    onClick={() => setShowMenu(!showMenu)}
+                    className={cn(
+                      "p-2 rounded-lg transition-all duration-200 border border-transparent",
+                      showMenu 
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                        : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-200 dark:hover:border-slate-800"
+                    )}
+                    title="Options"
+                >
+                    {copied ? <Check size={18} className="text-emerald-500" /> : <Copy size={18} />}
+                </button>
+
+                {/* Dropdown */}
+                {showMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-1">
+                     <div className="text-[10px] font-bold text-slate-400 px-3 py-2 uppercase tracking-wider">Copy format</div>
+                     <button onClick={() => handleVisualCopy('framer')} className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors text-left group">
+                        <Framer size={14} className="text-slate-400 group-hover:text-black dark:group-hover:text-white" /> <span>Framer Component</span>
+                     </button>
+                     <button onClick={handleCopyCode} className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors text-left group">
+                        <Atom size={14} className="text-slate-400 group-hover:text-blue-500" /> <span>React Code</span>
+                     </button>
+                  </div>
+                )}
+            </div>
         </div>
       </div>
 
+      {/* VARIANT TABS */}
+      {view === 'preview' && variants && variants.length > 0 && (
+          <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-2">
+                  {variants.map((variant, index) => (
+                      <button
+                          key={index}
+                          onClick={() => setActiveVariantIndex(index)}
+                          className={cn(
+                              "px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-200 whitespace-nowrap border",
+                              activeVariantIndex === index
+                                  ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-sm"
+                                  : "bg-white dark:bg-transparent text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white"
+                          )}
+                      >
+                          {variant.name}
+                      </button>
+                  ))}
+              </div>
+          </div>
+      )}
+
+      {/* CONTENT AREA */}
       <div className="relative">
         {view === 'preview' ? (
           <div 
             ref={previewRef}
             className={cn(
-              "p-8 md:p-12 min-h-[200px] flex items-center justify-center transition-colors duration-300",
+              "p-8 sm:p-12 md:p-16 min-h-[280px] flex items-center justify-center transition-colors duration-300",
               isDark 
-                ? "dark bg-slate-950 bg-[radial-gradient(#1e293b_1px,transparent_1px)]" 
-                : "bg-slate-50/50 dark:bg-slate-950 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)]",
-              "[background-size:16px_16px]",
+                ? "bg-slate-950 text-white bg-[radial-gradient(#334155_1px,transparent_1px)]" 
+                : "bg-slate-50 text-slate-900 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)]",
+              "[background-size:24px_24px]",
               className
             )}
           >
-            {children}
+            <div className="scale-100 transition-transform duration-300">
+               {variants && variants.length > 0 
+                 ? renderWithTheme(variants[activeVariantIndex].component) 
+                 : renderWithTheme(children)}
+            </div>
           </div>
         ) : (
           <div className={cn(
-            "relative overflow-hidden border-t transition-colors",
+            "relative overflow-hidden transition-colors border-t border-slate-100 dark:border-slate-800",
             isDark 
-              ? "bg-slate-950 border-slate-800 text-slate-300" 
-              : "bg-slate-50 border-slate-200 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300 text-slate-800"
+              ? "bg-slate-950 text-slate-300" 
+              : "bg-slate-50 text-slate-800"
           )}>
-            <div className="p-4 overflow-x-auto">
-              <pre className="font-mono text-sm leading-relaxed">
-                <code>{code.trim()}</code>
-              </pre>
+            <div className="w-full grid">
+              <div className="p-4 sm:p-6 overflow-x-auto w-full max-h-[50vh] sm:max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <pre className="font-mono text-xs sm:text-sm leading-relaxed">
+                  <code>
+                    {reactComponentCode 
+                        ? reactComponentCode.trim() 
+                        : (variants && variants[activeVariantIndex]?.code 
+                            ? variants[activeVariantIndex].code?.trim() 
+                            : code.trim())
+                    }
+                  </code>
+                </pre>
+              </div>
             </div>
           </div>
         )}

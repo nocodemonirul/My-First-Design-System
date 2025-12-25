@@ -18,22 +18,23 @@ import {
 } from 'lucide-react';
 
 import { Button } from './components/Button';
-import { ComponentPreview } from './components/ComponentPreview';
+import { ComponentPreview, PreviewVariant } from './components/ComponentPreview';
 import { ButtonFramerCode } from './system/framer-templates';
+import { ButtonReactCode } from './system/react-templates';
 import { cn } from './utils';
 
 // --- Documentation Pages ---
 
 const IntroPage = ({ onNavigate }: { onNavigate: (page: string) => void }) => (
   <div className="space-y-6 max-w-3xl">
-    <div className="mb-10">
-      <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">Introduction</h1>
-      <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
+    <div className="mb-8 md:mb-10">
+      <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">Introduction</h1>
+      <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
         This is the new <strong>SusButton</strong> component. It replaces all previous button components with a single, unified primitive that handles Primary, Secondary, Tertiary, Success, and Fail states across 5 sizes.
       </p>
     </div>
 
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className="grid md:grid-cols-2 gap-4 md:gap-6">
       <div 
         onClick={() => onNavigate('button')}
         className="group p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-slate-400 dark:hover:border-slate-600 hover:shadow-md transition-all cursor-pointer"
@@ -48,121 +49,117 @@ const IntroPage = ({ onNavigate }: { onNavigate: (page: string) => void }) => (
   </div>
 );
 
-const ButtonPage = ({ theme }: { theme: "light" | "dark" }) => (
-  <div className="space-y-12 max-w-4xl pb-20">
-    <div className="mb-8 border-b border-slate-200 dark:border-slate-800 pb-8">
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Button</h1>
-      <p className="text-slate-600 dark:text-slate-400 text-lg">
-        A single component with granular control over Type, Size, and Icon Placement.
-      </p>
-    </div>
+const ButtonPage = ({ theme }: { theme: "light" | "dark" }) => {
 
-    {/* 1. Types */}
-    <div id="types" className="scroll-mt-24">
-      <ComponentPreview 
-        title="Types" 
-        description="The 5 visual styles available."
-        framerCode={ButtonFramerCode}
-        code={`
-<Button theme="${theme}" type="primary" label="Primary" />
-<Button theme="${theme}" type="secondary" label="Secondary" />
-<Button theme="${theme}" type="tertiary" label="Tertiary" />
-<Button theme="${theme}" type="success" label="Success" />
-<Button theme="${theme}" type="fail" label="Fail" />
-        `}
-      >
-        <div className="flex flex-wrap gap-4 items-center justify-center">
-          <Button theme={theme} type="primary" label="Primary" />
-          <Button theme={theme} type="secondary" label="Secondary" />
-          <Button theme={theme} type="tertiary" label="Tertiary" />
-          <Button theme={theme} type="success" label="Success" />
-          <Button theme={theme} type="fail" label="Fail" />
-        </div>
-      </ComponentPreview>
-    </div>
+  const typeVariants: PreviewVariant[] = [
+    { name: 'Primary', component: <Button theme={theme} type="primary" label="Primary" />, code: `<Button theme="${theme}" type="primary" label="Primary" />` },
+    { name: 'Secondary', component: <Button theme={theme} type="secondary" label="Secondary" />, code: `<Button theme="${theme}" type="secondary" label="Secondary" />` },
+    { name: 'Tertiary', component: <Button theme={theme} type="tertiary" label="Tertiary" />, code: `<Button theme="${theme}" type="tertiary" label="Tertiary" />` },
+    { name: 'Success', component: <Button theme={theme} type="success" label="Success" />, code: `<Button theme="${theme}" type="success" label="Success" />` },
+    { name: 'Fail', component: <Button theme={theme} type="fail" label="Fail" />, code: `<Button theme="${theme}" type="fail" label="Fail" />` },
+  ];
 
-    {/* 2. Sizes */}
-    <div id="sizes" className="scroll-mt-24">
-      <ComponentPreview 
-        title="Sizes" 
-        description="Available in XL, L, M, S, and XS."
-        framerCode={ButtonFramerCode}
-        code={`
-<Button theme="${theme}" size="xl" label="XL Button" />
-<Button theme="${theme}" size="l" label="Large" />
-<Button theme="${theme}" size="m" label="Medium" />
-<Button theme="${theme}" size="s" label="Small" />
-<Button theme="${theme}" size="xs" label="XS" />
-        `}
-      >
-        <div className="flex flex-wrap gap-4 items-center justify-center">
-          <Button theme={theme} size="xl" label="XL Button" />
-          <Button theme={theme} size="l" label="Large" />
-          <Button theme={theme} size="m" label="Medium" />
-          <Button theme={theme} size="s" label="Small" />
-          <Button theme={theme} size="xs" label="XS" />
-        </div>
-      </ComponentPreview>
-    </div>
+  const sizeVariants: PreviewVariant[] = [
+    { name: 'XL', component: <Button theme={theme} size="xl" label="XL Button" />, code: `<Button theme="${theme}" size="xl" label="XL Button" />` },
+    { name: 'Large', component: <Button theme={theme} size="l" label="Large" />, code: `<Button theme="${theme}" size="l" label="Large" />` },
+    { name: 'Medium', component: <Button theme={theme} size="m" label="Medium" />, code: `<Button theme="${theme}" size="m" label="Medium" />` },
+    { name: 'Small', component: <Button theme={theme} size="s" label="Small" />, code: `<Button theme="${theme}" size="s" label="Small" />` },
+    { name: 'XS', component: <Button theme={theme} size="xs" label="XS" />, code: `<Button theme="${theme}" size="xs" label="XS" />` },
+  ];
 
-    {/* 3. Icons */}
-    <div id="icons" className="scroll-mt-24">
-      <ComponentPreview 
-        title="Icons" 
-        description="Support for Left, Right, and Icon Only layouts."
-        framerCode={ButtonFramerCode}
-        code={`
-<Button theme="${theme}" iconPlacement="left" leftIcon={<Mail size={16}/>} label="Email" />
-<Button theme="${theme}" iconPlacement="right" rightIcon={<ArrowRight size={16}/>} label="Next" />
-<Button theme="${theme}" iconPlacement="iconOnly" leftIcon={<Plus size={20}/>} />
-        `}
-      >
-        <div className="flex flex-wrap gap-4 items-center justify-center">
-          <Button theme={theme} iconPlacement="left" leftIcon={<Mail size={16}/>} label="Email" />
-          <Button theme={theme} iconPlacement="right" rightIcon={<ArrowRight size={16}/>} label="Next" />
-          <Button theme={theme} iconPlacement="iconOnly" leftIcon={<Plus size={20}/>} />
-        </div>
-      </ComponentPreview>
-    </div>
+  const iconVariants: PreviewVariant[] = [
+    { name: 'Left Icon', component: <Button theme={theme} iconPlacement="left" leftIcon={<Mail size={16}/>} label="Email" />, code: `<Button theme="${theme}" iconPlacement="left" leftIcon={<Mail size={16}/>} label="Email" />` },
+    { name: 'Right Icon', component: <Button theme={theme} iconPlacement="right" rightIcon={<ArrowRight size={16}/>} label="Next" />, code: `<Button theme="${theme}" iconPlacement="right" rightIcon={<ArrowRight size={16}/>} label="Next" />` },
+    { name: 'Icon Only', component: <Button theme={theme} iconPlacement="iconOnly" leftIcon={<Plus size={20}/>} />, code: `<Button theme="${theme}" iconPlacement="iconOnly" leftIcon={<Plus size={20}/>} />` },
+  ];
 
-     {/* 4. States */}
-     <div id="states" className="scroll-mt-24">
-      <ComponentPreview 
-        title="States" 
-        description="Disabled state visualization."
-        framerCode={ButtonFramerCode}
-        code={`
-<Button theme="${theme}" disabled label="Disabled" />
-<Button theme="${theme}" disabled type="secondary" label="Disabled" />
-        `}
-      >
-        <div className="flex flex-wrap gap-4 items-center justify-center">
-          <Button theme={theme} disabled label="Disabled" />
-          <Button theme={theme} disabled type="secondary" label="Disabled" />
-        </div>
-      </ComponentPreview>
-    </div>
+  const stateVariants: PreviewVariant[] = [
+    { name: 'Disabled', component: <Button theme={theme} disabled label="Disabled" />, code: `<Button theme="${theme}" disabled label="Disabled" />` },
+    { name: 'Disabled Secondary', component: <Button theme={theme} disabled type="secondary" label="Disabled" />, code: `<Button theme="${theme}" disabled type="secondary" label="Disabled" />` },
+  ];
 
-    {/* 5. Contexts */}
-    <div id="contexts" className="scroll-mt-24">
-      <ComponentPreview 
-        title="Contextual Usage" 
-        description="Real world examples."
-        framerCode={ButtonFramerCode}
-        code={`
-<Button theme="${theme}" type="fail" iconPlacement="left" leftIcon={<Trash2 size={16}/>} label="Delete" />
-<Button theme="${theme}" type="success" iconPlacement="right" rightIcon={<Check size={16}/>} label="Complete" />
-        `}
-      >
-        <div className="flex flex-wrap gap-4 items-center justify-center">
-          <Button theme={theme} type="fail" iconPlacement="left" leftIcon={<Trash2 size={16}/>} label="Delete" />
-          <Button theme={theme} type="success" iconPlacement="right" rightIcon={<Check size={16}/>} label="Complete" />
-        </div>
-      </ComponentPreview>
-    </div>
+  const contextVariants: PreviewVariant[] = [
+    { name: 'Delete', component: <Button theme={theme} type="fail" iconPlacement="left" leftIcon={<Trash2 size={16}/>} label="Delete" />, code: `<Button theme="${theme}" type="fail" iconPlacement="left" leftIcon={<Trash2 size={16}/>} label="Delete" />` },
+    { name: 'Complete', component: <Button theme={theme} type="success" iconPlacement="right" rightIcon={<Check size={16}/>} label="Complete" />, code: `<Button theme="${theme}" type="success" iconPlacement="right" rightIcon={<Check size={16}/>} label="Complete" />` },
+  ];
 
-  </div>
-);
+  return (
+    <div className="space-y-8 md:space-y-12 max-w-4xl pb-12 md:pb-20">
+      <div className="mb-6 md:mb-8 border-b border-slate-200 dark:border-slate-800 pb-6 md:pb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">Button</h1>
+        <p className="text-slate-600 dark:text-slate-400 text-base md:text-lg">
+          A single component with granular control over Type, Size, and Icon Placement.
+        </p>
+      </div>
+
+      {/* 1. Types */}
+      <div id="types" className="scroll-mt-24">
+        <ComponentPreview 
+          title="Types" 
+          description="The 5 visual styles available."
+          framerCode={ButtonFramerCode}
+          reactComponentCode={ButtonReactCode}
+          code="" // Using variants instead
+          variants={typeVariants}
+          themeMode={theme}
+        />
+      </div>
+
+      {/* 2. Sizes */}
+      <div id="sizes" className="scroll-mt-24">
+        <ComponentPreview 
+          title="Sizes" 
+          description="Available in XL, L, M, S, and XS."
+          framerCode={ButtonFramerCode}
+          reactComponentCode={ButtonReactCode}
+          code=""
+          variants={sizeVariants}
+          themeMode={theme}
+        />
+      </div>
+
+      {/* 3. Icons */}
+      <div id="icons" className="scroll-mt-24">
+        <ComponentPreview 
+          title="Icons" 
+          description="Support for Left, Right, and Icon Only layouts."
+          framerCode={ButtonFramerCode}
+          reactComponentCode={ButtonReactCode}
+          code=""
+          variants={iconVariants}
+          themeMode={theme}
+        />
+      </div>
+
+       {/* 4. States */}
+       <div id="states" className="scroll-mt-24">
+        <ComponentPreview 
+          title="States" 
+          description="Disabled state visualization."
+          framerCode={ButtonFramerCode}
+          reactComponentCode={ButtonReactCode}
+          code=""
+          variants={stateVariants}
+          themeMode={theme}
+        />
+      </div>
+
+      {/* 5. Contexts */}
+      <div id="contexts" className="scroll-mt-24">
+        <ComponentPreview 
+          title="Contextual Usage" 
+          description="Real world examples."
+          framerCode={ButtonFramerCode}
+          reactComponentCode={ButtonReactCode}
+          code=""
+          variants={contextVariants}
+          themeMode={theme}
+        />
+      </div>
+
+    </div>
+  );
+};
 
 // --- App Shell ---
 
